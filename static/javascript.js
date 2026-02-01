@@ -97,7 +97,7 @@ function handleJump() {
     sendAction('jump');
     
     // 점프 후 즉시 none 재시작
-    startNoneAction();
+    setTimeout(() => startNoneAction(), ACTION_REPEAT_INTERVAL);
     
     // 버튼 시각 피드백
     const btn = document.getElementById('btn-jump');
@@ -132,7 +132,7 @@ function stopSlideAction() {
     document.getElementById('btn-slide').classList.remove('active');
     
     // 슬라이드 종료 후 none 재시작
-    startNoneAction();
+    setTimeout(() => startNoneAction(), ACTION_REPEAT_INTERVAL);
 }
 
 // #################### Reset & Stop All ####################
