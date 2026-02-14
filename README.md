@@ -3,10 +3,11 @@
 
   
 ## Real
-<img src="assets/real.gif" width="800" height="400"/>
+<video src="asset/real.mp4" width="800" height="400" autoplay loop muted playsinline></video>
 
 ## Fake (AI-generated)
-<img src="assets/fake.gif" width="800" height="400"/>
+<video src="asset/fake.mp4" width="800" height="400" autoplay loop muted playsinline></video>
 
 ## Simulation
-<img src="assets/Simulation.gif" width="800" height="400"/>
+<video src="asset/simulation.mp4" autoplay loop muted playsinline></video>
+
