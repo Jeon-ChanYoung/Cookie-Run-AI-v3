@@ -8,5 +8,5 @@
 ## Fake (AI-generated)
 <img src="assets/fake.gif" width="512"/>
 
-## Simulation
-<video src="assets/simulation.mp4" width="512" autoplay loop muted playsinline></video>
+## Simulation UI
+<img src="assets/simulation.gif" width="512"/>
