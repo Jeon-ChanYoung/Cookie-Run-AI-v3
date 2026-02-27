@@ -40,6 +40,7 @@ class RSSM:
             weight_decay=config.world_model_weight_decay
         )
 
+        self.load_rssm(config.rssm_path)
 
     def train_step(self, states, actions):
         """

@@ -32,6 +32,8 @@ class LFMWorldModel:
             weight_decay=self.config.flow_weight_decay
         )
 
+        self.load_flow(config.lfm_path)
+
 
     def train_step(self, states, actions):
         """

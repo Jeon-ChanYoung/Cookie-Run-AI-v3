@@ -24,6 +24,8 @@ class VAE(nn.Module):
             self.optimizer, config.vae_train_epochs, eta_min=0.00001
         )
 
+        self.load_vae(config.vae_path)
+
 
     def forward(self, x):
         mu, logvar = self.encoder(x)
