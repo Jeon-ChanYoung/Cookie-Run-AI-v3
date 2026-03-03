@@ -1,5 +1,8 @@
-# Cookie-Run-AI
-Play in an AI-generated environment by learning the first stage of Cookie Run Ovenbreak, "The Witch's Oven."
+# Cookie-Run-AI-v2
+Play in an AI-generated environment by learning the first stage of Cookie Run Ovenbreak, "The Witch's Oven."  
+
+The previous version is as follows: 
+https://github.com/Jeon-ChanYoung/Cookie-Run-AI
 
 - Observation Size: 128×256 pixels  
 - Action Space: 3 actions (None, Jump, Slide)  
