@@ -28,7 +28,7 @@ This project is an **enhanced version of Cookie-Run-AI v1**, featuring significa
 
 | Feature | v1 | v2 |
 |---------|----|----|
-| **Training Approach** | End-to-end | Two-stage (VQ-VAE → RSSM) |
+| **Training Approach** | End-to-end | Two-stage (VQ-VAE -> RSSM) |
 | **Latent Space** | Pixel-level reconstruction | Discrete latent tokens |
 | **Encoder** | Standard CNN | Pre-trained VQ-VAE encoder |
 | **Reconstruction Target** | Raw pixels | Latent representations |  
@@ -88,6 +88,8 @@ Epoch [ 98/100] RSSM loss: 1.817078  recon: 1.783470  kl: 3.360827  acc: 0.7163
 Epoch [ 99/100] RSSM loss: 1.858833  recon: 1.823287  kl: 3.554642  acc: 0.7027
 Epoch [100/100] RSSM loss: 1.825670  recon: 1.791427  kl: 3.424293  acc: 0.7124
 ```
+
+Here, "Accuracy" refers to the ratio of predicted VQ token indices that match the actual VQ tokens.  
 
 <br>
 
