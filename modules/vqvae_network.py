@@ -173,7 +173,7 @@ class FiniteScalarQuantizer(nn.Module):
         # ex) z_q = tensor([0.333, -0.333, 1.])
         half = (self._levels - 1) / 2  # tensor([1.5, 1.5, 1.5])
 
-        level_indices = torch.round(z_q * half + half.long())
+        level_indices = torch.round(z_q * half + half).long()
         # level_indices = tensor([2., 1., 3.])
 
         indices = (level_indices * self._basis).sum(dim=-1)
