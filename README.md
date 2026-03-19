@@ -1,4 +1,4 @@
-# Cookie-Run-AI-v2
+# Cookie-Run-AI-v3
 Play in an environment where an AI learns the first stage of Cookie Run, “The Witch's Oven,” and generates the next screen in real time based on your input.  
 
 **Previous Version:**
@@ -27,12 +27,12 @@ https://github.com/Jeon-ChanYoung/Cookie-Run-AI
 <br>
   
 ## Real
-<img src="assets/real.gif" width="512"/>
+<!-- <img src="assets/real.gif" width="512"/> -->
 
 <br>
   
 ## Fake (AI-generated)
-<img src="assets/fake.gif" width="512"/>
+<!-- <img src="assets/fake.gif" width="512"/> -->
 
 #### Model Architecture & Improvements
 
@@ -133,47 +133,12 @@ python main.py
 <br>
 
 ## Simulation  
-<img src="assets/simulation.gif" width="600"/>
+<!-- <img src="assets/simulation.gif" width="600"/> -->
 
 - ⬆️ Arrow Up: Jump
 - ⬇️ Arrow Down: Slide
 - 🔄 R Key: Reset
-
-Upon starting, the simulation randomly selects an initial image from the samples/oven_of_witch directory and begins an interactive imagination rollout.  
-
-### Notes  
-- The simulation is lightweight and runs smoothly on a **CPU**.
-- You can adjust FPS by modifying **ACTION_REPEAT_INTERVAL** value in static/javascript.js.
-- The training process follows this structure:
-  
-```python
-# vqvae
-for epoch in range(1, vqvae_train_epochs + 1):
-    vqvae.change_train_mode(train=True)
-
-    for batch_index, frames in enumerate(frame_loader, 1):
-        frames = frames.to(device, non_blocking=True)
-        loss, recon_l, vq_l, p_l, usage = vqvae.train_step(frames)
-
-    print_losses()
-
-    vqvae.step_scheduler()
-
-    if epoch % 3 == 0:
-        vqvae.save_vqvae(epoch, save_dir)
-        # vqvae.visualize_recon(frame_loader)
-
-# rssm
-for epoch in range(1, rssm_train_epochs + 1):
-    rssm.change_train_mode(train=True)
-
-    for batch_index, (idx_batch, actions) in enumerate(rssm_loader, 1):
-        idx_batch = idx_batch.to(device, non_blocking=True)
-        actions   = actions.to(device, non_blocking=True)
-        loss, recon_l, kl_l, acc  = rssm.train_step(idx_batch, actions)
-
-    print_losses()
-
+ 
     if epoch % 5 == 0:
         rssm.save_rssm(epoch, save_dir)
         # rssm.visualize(vqvae, rssm_loader, epoch=epoch, n_frames=10, save_dir=vis_dir)
