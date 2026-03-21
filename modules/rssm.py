@@ -25,7 +25,7 @@ class RSSM(nn.Module):
         # optimizer
         self.rssm_optimizer = optim.Adam(
             [p for p in self.parameters() if p.requires_grad],
-            lr=config.rssm_lr # rssm_lr = 0.0003
+            lr=config.rssm_lr # rssm_lr = 0.001
         )
 
 
@@ -72,7 +72,7 @@ class RSSM(nn.Module):
 
         pred_flat = predicted_logits.permute(0, 1, 3, 4, 2).reshape(-1, self.config.vq_codebook_size)
         target_flat = target_indices.reshape(-1)
-        reconstruction_loss = F.cross_entropy(pred_flat, target_flat, label_smoothing=self.config.label_smoothing) # label_smoothing = 0.1
+        reconstruction_loss = F.cross_entropy(pred_flat, target_flat, label_smoothing=self.config.label_smoothing) # label_smoothing = 0.0
 
         # for logging
         with torch.no_grad():
@@ -80,7 +80,7 @@ class RSSM(nn.Module):
             accuracy = (predicted == target_flat).float().mean()
 
             top5_predicted = pred_flat.topk(5, dim=-1).indices  # (N, 5)
-            target_expanded = target_flat.unsqueeze(-1)          # (N, 1)
+            target_expanded = target_flat.unsqueeze(-1)         # (N, 1)
             top5_accuracy = (top5_predicted == target_expanded).any(dim=-1).float().mean()
 
         # kl loss
@@ -128,12 +128,6 @@ class RSSM(nn.Module):
             self.eval()
             for p in self.parameters():
                 p.requires_grad = False
-
-
-    @torch.no_grad()
-    def logits_to_indices(self, logits):
-        # logits: (..., K, H, W) -> indices: (..., H, W)
-        return logits.argmax(dim=-3)
     
 
     # @torch.no_grad()

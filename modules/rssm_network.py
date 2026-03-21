@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 from torch.distributions.utils import probs_to_logits
-from .blocks import ResBlock, DownBlock, UpBlock
+from .blocks import DownBlock, UpBlock
 from .utils import straight_through_categorical
 
 ######################## Encoder #########################

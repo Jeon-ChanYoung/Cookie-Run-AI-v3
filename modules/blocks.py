@@ -21,7 +21,7 @@ class UpBlock(nn.Module):
         super().__init__()
         self.up = nn.Sequential(
             nn.Upsample(scale_factor=2, mode='nearest'),
-            nn.Conv2d(in_channels, out_channels, 3, 1, 1, bias=False),
+            nn.Conv2d(in_channels, out_channels, 3, 1, 1, bias=False), # <- I think it is better "bias=last" 
             nn.GroupNorm(32, out_channels) if not last else nn.Identity(),
             nn.SiLU()                      if not last else nn.Identity()
         )
