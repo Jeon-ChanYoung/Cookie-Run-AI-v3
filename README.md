@@ -37,22 +37,31 @@ Play in an environment where an AI learns the first stage of Cookie Run, “The 
 
 #### Model Architecture & Improvements
 
-This project is an **enhanced version of Cookie-Run-AI v1**, featuring significant architectural improvements over the original RSSM (Recurrent State-Space Model) implementation.  
+This project is an **enhanced version of Cookie-Run-AI v2**, featuring significant architectural improvements to solve the training bottlenecks observed in the previous version. 
 
-| Feature | v1 | v2 |
-|---------|----|----|
-| **Training Approach** | End-to-end | Two-stage (VQ-VAE -> RSSM) |
-| **Latent Space** | Pixel-level reconstruction | Discrete latent tokens |
-| **Encoder** | Standard CNN | Pre-trained VQ-VAE encoder |
-| **Reconstruction Target** | Raw pixels | Latent representations |  
+| Feature | v1 | v2 | **v3 (Current)** |
+|---------|----|----|------------------|
+| **Architecture** | End-to-end RSSM | Two-stage (VQ-VAE $\rightarrow$ RSSM) | **Two-stage (FSQ $\rightarrow$ RSSM)** |
+| **Quantization** | None (Continuous) | Vector Quantization (EMA) | **Finite Scalar Quantization (FSQ)** |
+| **Codebook Size ($K$)** | - | 256 | **64** (Levels: [4, 4, 4]) |
+| **Code Dim ($D$)** | - | 8 | **3** |
+| **Spatial Resolution** | Pixel level | 16 x 32 (512 tokens) | **8 x 16 (128 tokens)** |
+| **CNN Backbone** | Standard CNN | Standard ResNet | **Enhanced ResNet (deeper)** |
 
-v2 transitions to a two-stage architecture consisting of a VQ-VAE and an RSSM.  
+<br>
 
-In the first stage, the VQ-VAE incorporates a pre-trained VGG16 network to compute perceptual loss, compressing raw 128x256 images into a discrete 16x32 grid of integer tokens based on a codebook of size 256. 
+### Experiment
+**The Bottleneck in v2:**  
+When using a token grid of 512 tokens (16×32) with a codebook size of 256, the RSSM training consistently plateaued at an early stage. The RSSM decoder had to solve a highly complex prediction problem: predicting one of 256 categories for each of the 512 spatial tokens at every step. This substantially increased the reconstruction burden on the world model and limited downstream accuracy.
 
-In the second stage, the RSSM models world dynamics by treating the next-step prediction as a categorical classification task over these discrete tokens rather than a continuous regression task. 
+**The Solution in v3:**  
+To address this, we implemented **FSQ (Finite Scalar Quantization)** and aggressively reduced the complexity of the latent space:
+1. **Token Compactness:** Reduced the spatial token resolution from 16×32 to **8×16** (128 tokens).
+2. **Simplified Codebook:** Reduced the codebook size ($K$) from 256 to **64** and dimensions ($D$) from 8 to **3**.
+3. **Enhanced Autoencoder:** Such extreme compression (roughly a 1000:1 ratio) could degrade reconstruction quality. To compensate, we **substantially strengthened both the encoder and decoder architectures** (adding DownBlocks, UpBlocks, and more ResBlocks), allowing the tokenizer to preserve visual fidelity despite the much tighter bottleneck.
+4. **Optimized RSSM:** Lightweighted and optimized the network module to accommodate the reduced token dimensions.
 
-To optimize the training pipeline, the entire image dataset is pre-computed and converted into lightweight integer tokens using the trained VQ-VAE prior to the RSSM phase.  
+**Result:** The revised design achieved a significantly better trade-off between token compactness, reconstruction quality, and world model predictability. RSSM training stability and token prediction accuracy have dramatically improved.
 
 <br>
 
@@ -109,7 +118,7 @@ Here, "Accuracy" refers to the ratio of predicted VQ token indices that match th
 ## How to Run  
 **1. Clone the repository and install dependencies:** 
 ```
-git clone https://github.com/Jeon-ChanYoung/Cookie-Run-AI-v2.git
+git clone https://github.com/Jeon-ChanYoung/Cookie-Run-AI-v3.git
 pip install -r requirements.txt
 ```
 
@@ -119,7 +128,7 @@ pip install -r requirements.txt
 Download the pre-trained weights (vqvae_ep30.pth, rssm_ep100.pth) from the Releases page and place them in the directory structure as follows:  
 ```
 model_params/
-    └── rssm_ep100.pth
+    └── rssm_ep400.pth
     └── vqvae_ep30.pth
 ```
 If model_params does not exist, create it.  
@@ -139,8 +148,3 @@ python main.py
 - ⬆️ Arrow Up: Jump
 - ⬇️ Arrow Down: Slide
 - 🔄 R Key: Reset
- 
-    if epoch % 5 == 0:
-        rssm.save_rssm(epoch, save_dir)
-        # rssm.visualize(vqvae, rssm_loader, epoch=epoch, n_frames=10, save_dir=vis_dir)
-```
