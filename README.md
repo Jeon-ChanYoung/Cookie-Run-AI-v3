@@ -61,28 +61,28 @@ To address this, we implemented **FSQ (Finite Scalar Quantization)** and aggress
 3. **Enhanced Autoencoder:** Such extreme compression (roughly a 1000:1 ratio) could degrade reconstruction quality. To compensate, we **substantially strengthened both the encoder and decoder architectures** (adding DownBlocks, UpBlocks, and more ResBlocks), allowing the tokenizer to preserve visual fidelity despite the much tighter bottleneck.
 4. **Optimized RSSM:** Lightweighted and optimized the network module to accommodate the reduced token dimensions.
 
-**Result:** The revised design achieved a significantly better trade-off between token compactness, reconstruction quality, and world model predictability. RSSM training stability and token prediction accuracy have dramatically improved.
-
 <br>
 
 ## Loss 
 
 ### VQ-VAE Loss
-<img src="assets/vqvae_recon.png" alt="recon" width="600">
+<img src="assets/fsq_vqvae_recon.png" alt="recon" width="600">
 
 ```
-Epoch [ 1/30] VQ-VAE loss: 0.203241  recon: 0.014470  vq_l: 0.010847  p_l: 1.779250  usage: 1.0
-Epoch [ 2/30] VQ-VAE loss: 0.182763  recon: 0.012679  vq_l: 0.011716  p_l: 1.583680  usage: 1.0
-Epoch [ 3/30] VQ-VAE loss: 0.167650  recon: 0.011198  vq_l: 0.011293  p_l: 1.451597  usage: 1.0
-Epoch [ 4/30] VQ-VAE loss: 0.159327  recon: 0.010206  vq_l: 0.011196  p_l: 1.379252  usage: 1.0
-Epoch [ 5/30] VQ-VAE loss: 0.159627  recon: 0.010195  vq_l: 0.012017  p_l: 1.374150  usage: 1.0
+Epoch [ 1/30] VQ-VAE loss: 1.179069  recon: 0.040051  p_l: 3.796725
+Epoch [ 2/30] VQ-VAE loss: 0.634990  recon: 0.026097  p_l: 2.029643 
+Epoch [ 3/30] VQ-VAE loss: 0.459326  recon: 0.020848  p_l: 1.461594 
+Epoch [ 4/30] VQ-VAE loss: 0.412156  recon: 0.020268  p_l: 1.306292 
+Epoch [ 5/30] VQ-VAE loss: 0.403967  recon: 0.020089  p_l: 1.279593 
 ...
-Epoch [26/30] VQ-VAE loss: 0.136206  recon: 0.007938  vq_l: 0.011916  p_l: 1.163512  usage: 1.0
-Epoch [27/30] VQ-VAE loss: 0.136079  recon: 0.007839  vq_l: 0.012115  p_l: 1.161231  usage: 1.0
-Epoch [28/30] VQ-VAE loss: 0.136079  recon: 0.007839  vq_l: 0.012115  p_l: 1.161231  usage: 1.0
-Epoch [29/30] VQ-VAE loss: 0.135549  recon: 0.007781  vq_l: 0.011987  p_l: 1.155040  usage: 1.0
-Epoch [30/30] VQ-VAE loss: 0.134972  recon: 0.007722  vq_l: 0.011902  p_l: 1.149331  usage: 1.0
+Epoch [26/30] VQ-VAE loss: 0.229845  recon: 0.014724  p_l: 0.717070 
+Epoch [27/30] VQ-VAE loss: 0.234596  recon: 0.014913  p_l: 0.732277 
+Epoch [28/30] VQ-VAE loss: 0.242575  recon: 0.015040  p_l: 0.758450  
+Epoch [29/30] VQ-VAE loss: 0.245375  recon: 0.014927  p_l: 0.768160 
+Epoch [30/30] VQ-VAE loss: 0.231396  recon: 0.014662  p_l: 0.722447  
 ```
+
+As you can see here, even if we reduce K and D slightly, the final loss values remain similar. Therefore, reducing K and D makes it much easier for the RSSM to learn.  
 
 <br>
 
