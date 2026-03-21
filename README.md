@@ -4,7 +4,7 @@ Play in an environment where an AI learns the first stage of Cookie Run, “The 
 **Previous Version:**  
 - https://github.com/Jeon-ChanYoung/Cookie-Run-AI
 - https://github.com/Jeon-ChanYoung/Cookie-Run-AI-v2
-- 
+
 <br>
 
 | Item | Detail |
