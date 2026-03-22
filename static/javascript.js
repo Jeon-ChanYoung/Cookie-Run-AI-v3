@@ -3,12 +3,12 @@ let noneInterval = null;
 let slideInterval = null;
 let isSliding = false;
 
-let smoothFps = 0;
-let lastFrameTime = performance.now();
+let frameCount = 0;
+let fpsLastUpdateTime = performance.now();
 
 let hudActionTimeout = null; 
 
-const ACTION_REPEAT_INTERVAL = 85; // milliseconds
+const ACTION_REPEAT_INTERVAL = 40; // milliseconds
 const HUD_JUMP_DURATION = 200;
 
 // #################### WebSocket ####################
@@ -79,14 +79,16 @@ function displayHUDAction(action, duration = 0) {
 
 // FPS counter
 function countFPS() {
+    frameCount++;
     const now = performance.now();
-    const delta = now - lastFrameTime;
-    lastFrameTime = now;
+    const elapsed = now - fpsLastUpdateTime;
 
-    if (delta > 0) {
-        const instantFps = 1000 / delta;
-        smoothFps = smoothFps * 0.9 + instantFps * 0.1;
-        document.getElementById("hud-fps").textContent = Math.round(smoothFps);
+    if (elapsed >= 1000) {
+        const fps = (frameCount * 1000) / elapsed;
+        document.getElementById("hud-fps").textContent = Math.round(fps);
+
+        frameCount = 0;
+        fpsLastUpdateTime = now;
     }
 }
 
