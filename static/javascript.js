@@ -1,148 +1,270 @@
 let ws = null;
+let noneInterval = null;
+let slideInterval = null;
 let isSliding = false;
-let fpsCounter = 0;
-let lastFpsTime = performance.now();
-let hudActionTimeout = null;
 
+let smoothFps = 0;
+let lastFrameTime = performance.now();
+
+let hudActionTimeout = null; 
+
+const ACTION_REPEAT_INTERVAL = 85; // milliseconds
 const HUD_JUMP_DURATION = 200;
-const ACTION_NAMES = ["none", "jump", "slide", "reset"];
 
 // #################### WebSocket ####################
 
 function connectWebSocket() {
-    const protocol = location.protocol === "https:" ? "wss:" : "ws:";
-    ws = new WebSocket(`${protocol}//${location.host}/ws`);
-    ws.binaryType = "arraybuffer";              
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const host = window.location.host;
+    ws = new WebSocket(`${protocol}//${host}/ws`);
 
-    ws.onopen = () => console.log("WebSocket connected");
+    ws.onopen = () => {
+        console.log("WebSocket connected");
+        resetGame();
+    };
 
     ws.onmessage = (event) => {
-        if (!(event.data instanceof ArrayBuffer)) return;
+        const data = JSON.parse(event.data);
 
-        const actionId = new Uint8Array(event.data, 0, 1)[0];
-        const jpegData = new Uint8Array(event.data, 1);
-
-        const action = ACTION_NAMES[actionId] || "none";
-        if (action === "jump") {
-            displayHUDAction("jump", HUD_JUMP_DURATION);
-        } else if (!hudActionTimeout) {
-            displayHUDAction(action);
+        if (data.current_action === 'jump') {
+            displayHUDAction('jump', HUD_JUMP_DURATION);
+        } else if (!hudActionTimeout) { 
+            displayHUDAction(data.current_action);
         }
 
-        const blob = new Blob([jpegData], { type: "image/jpeg" });
-        const url = URL.createObjectURL(blob);
-        const img = document.getElementById("game-image");
-        const prev = img.src;
-        img.src = url;
-        if (prev && prev.startsWith("blob:")) URL.revokeObjectURL(prev);
+        if (data.status === "error") {
+            alert(data.message);
+            return;
+        }
 
-        countFPS();
+        requestAnimationFrame(() => {
+            document.getElementById('game-image').src = data.image;
+            countFPS();
+        });
     };
 
     ws.onclose = () => {
         console.log("Disconnected, reconnecting...");
+        stopAllActions();
         setTimeout(connectWebSocket, 1000);
     };
 
-    ws.onerror = (err) => console.error("WebSocket error:", err);
+    ws.onerror = (error) => {
+        console.error("WebSocket error:", error);
+    };
 }
 
 function sendAction(action) {
     if (ws?.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ type: "action", action }));
+        ws.send(JSON.stringify({ type: 'action', action }));
     }
 }
 
-function sendReset() {
-    if (ws?.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ type: "reset" }));
-    }
-}
-
-// #################### HUD / FPS ####################
-
+// HUD update
 function displayHUDAction(action, duration = 0) {
-    document.getElementById("hud-action").textContent = action;
-    if (hudActionTimeout) { clearTimeout(hudActionTimeout); hudActionTimeout = null; }
+    const hudAction = document.getElementById('hud-action');
+    hudAction.textContent = `${action}`;
+    
+    if (hudActionTimeout) {
+        clearTimeout(hudActionTimeout);
+        hudActionTimeout = null;
+    }
+    
     if (duration > 0) {
-        hudActionTimeout = setTimeout(() => { hudActionTimeout = null; }, duration);
+        hudActionTimeout = setTimeout(() => {
+            hudActionTimeout = null;
+        }, duration);
     }
 }
 
+// FPS counter
 function countFPS() {
-    fpsCounter++;
     const now = performance.now();
-    if (now - lastFpsTime >= 500) {
-        document.getElementById("hud-fps").textContent = Math.round(fpsCounter * 2);
-        fpsCounter = 0;
-        lastFpsTime = now;
+    const delta = now - lastFrameTime;
+    lastFrameTime = now;
+
+    if (delta > 0) {
+        const instantFps = 1000 / delta;
+        smoothFps = smoothFps * 0.9 + instantFps * 0.1;
+        document.getElementById("hud-fps").textContent = Math.round(smoothFps);
     }
 }
+
+// #################### None Action ####################
+
+function startNoneAction() {
+    if (noneInterval || isSliding) return;
+    
+    sendAction('none');
+    noneInterval = setInterval(() => sendAction('none'), ACTION_REPEAT_INTERVAL);
+}
+
+function stopNoneAction() {
+    if (noneInterval) {
+        clearInterval(noneInterval);
+        noneInterval = null;
+    }
+}
+
+// #################### Jump Action ####################
 
 function handleJump() {
-    sendAction("jump");
-    const btn = document.getElementById("btn-jump");
-    btn.classList.add("active");
-    setTimeout(() => btn.classList.remove("active"), 100);
-}
-
-function startSlide() {
     if (isSliding) return;
+    
+    stopNoneAction();
+    sendAction('jump');
+    
+    setTimeout(() => startNoneAction(), ACTION_REPEAT_INTERVAL);
+    
+    const btn = document.getElementById('btn-jump');
+    btn.classList.add('active');
+    setTimeout(() => btn.classList.remove('active'), 100);
+}
+
+// #################### Slide Action ####################
+
+function startSlideAction() {
+    if (isSliding) return;
+    
     isSliding = true;
-    sendAction("slide");
-    document.getElementById("btn-slide").classList.add("active");
+    stopNoneAction();
+    
+    sendAction('slide');
+    slideInterval = setInterval(() => sendAction('slide'), ACTION_REPEAT_INTERVAL);
+    
+    document.getElementById('btn-slide').classList.add('active');
 }
 
-function stopSlide() {
+function stopSlideAction() {
     if (!isSliding) return;
+    
     isSliding = false;
-    sendAction("none");
-    document.getElementById("btn-slide").classList.remove("active");
+    
+    if (slideInterval) {
+        clearInterval(slideInterval);
+        slideInterval = null;
+    }
+    
+    document.getElementById('btn-slide').classList.remove('active');
+    
+    setTimeout(() => startNoneAction(), ACTION_REPEAT_INTERVAL);
 }
 
-// #################### Reset ####################
+// #################### Reset & Stop All ####################
+
+function stopAllActions() {
+    stopNoneAction();
+    stopSlideAction();
+}
 
 function resetGame() {
-    isSliding = false;
-    document.getElementById("btn-slide").classList.remove("active");
-    sendReset();
-    const btn = document.getElementById("btn-reset");
-    btn.classList.add("active");
-    setTimeout(() => btn.classList.remove("active"), 100);
+    stopAllActions();
+    
+    if (ws?.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'reset' }));
+    }
+
+    const btn = document.getElementById('btn-reset');
+    btn.classList.add('active');
+    setTimeout(() => btn.classList.remove('active'), 100);
+    
+    startNoneAction();
 }
 
 // #################### Event Listeners ####################
+// Jump button 
+const jumpBtn = document.getElementById('btn-jump');
 
-const jumpBtn = document.getElementById("btn-jump");
-jumpBtn.addEventListener("mousedown", (e) => { e.preventDefault(); handleJump(); });
-jumpBtn.addEventListener("touchstart", (e) => { e.preventDefault(); handleJump(); }, { passive: false });
+jumpBtn.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    handleJump();
+});
 
-const slideBtn = document.getElementById("btn-slide");
-slideBtn.addEventListener("mousedown", (e) => { e.preventDefault(); startSlide(); });
-slideBtn.addEventListener("mouseup", (e) => { e.preventDefault(); stopSlide(); });
-slideBtn.addEventListener("mouseleave", () => { if (isSliding) stopSlide(); });
-slideBtn.addEventListener("touchstart", (e) => { e.preventDefault(); startSlide(); }, { passive: false });
-slideBtn.addEventListener("touchend", (e) => { e.preventDefault(); stopSlide(); }, { passive: false });
-slideBtn.addEventListener("touchcancel", (e) => { e.preventDefault(); stopSlide(); }, { passive: false });
+jumpBtn.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    handleJump();
+}, { passive: false });
 
-document.getElementById("btn-reset").addEventListener("click", (e) => { e.preventDefault(); resetGame(); });
+// Slide button
+const slideBtn = document.getElementById('btn-slide');
 
-// #################### Keyboard ####################
+slideBtn.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    startSlideAction();
+});
 
-const slideKeys = new Set(["s", "S", "ArrowDown"]);
-const jumpKeys = new Set(["w", "W", "ArrowUp", " "]);
-const resetKeys = new Set(["r", "R"]);
+slideBtn.addEventListener('mouseup', (e) => {
+    e.preventDefault();
+    stopSlideAction();
+});
+
+slideBtn.addEventListener('mouseleave', (e) => {
+    if (isSliding) stopSlideAction();
+});
+
+slideBtn.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    startSlideAction();
+}, { passive: false });
+
+slideBtn.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    stopSlideAction();
+}, { passive: false });
+
+slideBtn.addEventListener('touchcancel', (e) => {
+    e.preventDefault();
+    stopSlideAction();
+}, { passive: false });
+
+// Reset button
+document.getElementById('btn-reset').addEventListener('click', (e) => {
+    e.preventDefault();
+    resetGame();
+});
+
+// #################### Keyboard Support ####################
+
+const slideKeys = new Set(['s', 'S', 'ArrowDown']);
+const jumpKeys = new Set(['w', 'W', 'ArrowUp', ' ']);
+const resetKeys = new Set(['r', 'R']);
+
 let keySliding = false;
 
-document.addEventListener("keydown", (e) => {
-    if (resetKeys.has(e.key)) { e.preventDefault(); resetGame(); return; }
-    if (jumpKeys.has(e.key) && !e.repeat) { e.preventDefault(); handleJump(); return; }
-    if (slideKeys.has(e.key) && !keySliding) { e.preventDefault(); keySliding = true; startSlide(); }
+document.addEventListener('keydown', (e) => {
+    // Reset
+    if (resetKeys.has(e.key)) {
+        e.preventDefault();
+        resetGame();
+        return;
+    }
+    
+    if (jumpKeys.has(e.key) && !e.repeat) {
+        e.preventDefault();
+        handleJump();
+        return;
+    }
+    
+    // Slide (hold)
+    if (slideKeys.has(e.key) && !keySliding) {
+        e.preventDefault();
+        keySliding = true;
+        startSlideAction();
+    }
 });
 
-document.addEventListener("keyup", (e) => {
-    if (slideKeys.has(e.key)) { keySliding = false; stopSlide(); }
+document.addEventListener('keyup', (e) => {
+    if (slideKeys.has(e.key)) {
+        keySliding = false;
+        stopSlideAction();
+    }
 });
 
-window.addEventListener("blur", () => { keySliding = false; stopSlide(); });
-window.addEventListener("load", connectWebSocket);
+window.addEventListener('blur', () => {
+    keySliding = false;
+    stopSlideAction();
+});
+
+// #################### Init ####################
+
+window.addEventListener('load', connectWebSocket);
